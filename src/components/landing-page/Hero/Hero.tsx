@@ -22,6 +22,7 @@ const Hero = () => {
             alt="Hero Model"
             src={heroModel}
             style={{ width: "auto", height: "auto" }}
+            priority={true}
             className="absolute bottom-0 left-1/2 -translate-x-1/2 transform"
           />
         </figure>
