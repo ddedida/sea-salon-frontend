@@ -7,7 +7,7 @@ import { FaStar } from "react-icons/fa6";
 interface ReviewData {
   id: string;
   name: string;
-  review: number;
+  star: number;
   comment: string;
 }
 
@@ -16,46 +16,61 @@ const Review = () => {
   const [state, setState] = useState<ReviewData>({
     id: "",
     name: "",
-    review: 0,
+    star: 0,
     comment: "",
   });
-  const [reviews, setReviews] = useState<ReviewData[]>(
-    JSON.parse(localStorage.getItem("reviews") || "[]"),
-  );
+  const [reviews, setReviews] = useState<ReviewData[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedReviews = localStorage.getItem("reviews");
+      if (storedReviews) {
+        setReviews(JSON.parse(storedReviews));
+      }
+    }
+  }, []);
+
+  // Save to localStorage when reviews state changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("reviews", JSON.stringify(reviews));
+    }
+  }, [reviews]);
 
   // Handle Stars
   const handleStar = (index: number) => {
     setStars(index + 1);
-    setState({ ...state, review: index + 1 });
+    setState({ ...state, star: index + 1 });
   };
-
-  // Save to localStorage when reviews state changes
-  useEffect(() => {
-    localStorage.setItem("reviews", JSON.stringify(reviews));
-  }, [reviews]);
 
   // Handle Submit
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
-    if (state.name === "" || state.review === 0 || state.comment === "") {
+    if (state.name === "" || state.star === 0 || state.comment === "") {
       alert("Please fill all fields!");
       return;
     }
 
     const uniqueId = crypto.randomUUID();
     const newReview = { ...state, id: uniqueId };
-    setReviews([...reviews, newReview]);
+    setReviews((prevReviews) => {
+      const updatedReviews = [...prevReviews, newReview];
+      if (typeof window !== "undefined") {
+        localStorage.setItem("reviews", JSON.stringify(updatedReviews));
+      }
+      return updatedReviews;
+    });
 
     // Reset form state
-    setState({ id: "", name: "", review: 0, comment: "" });
+    setState({ id: "", name: "", star: 0, comment: "" });
     setStars(0);
   };
 
   return (
     <section className="flex h-fit w-full items-center justify-center bg-project-0">
       <div className="my-20 flex w-[1280px] flex-col gap-y-8">
-        <h1 className="font-playFairDisplay text-5xl font-bold text-bw-primary">
+        <h1 className="font-playFairDisplay text-5xl font-bold text-project-110">
           Reviews
         </h1>
 
@@ -123,19 +138,33 @@ const Review = () => {
 
           {/* Right Side */}
           <div className="flex h-fit w-fit flex-col gap-y-6">
-            {reviews.map((review) => (
-              <ReviewCard
-                key={review.id}
-                id={review.id} // Pass the review id
-                name={review.name}
-                review={review.review}
-                comment={review.comment}
-                onDelete={(id) => {
-                  const updatedReviews = reviews.filter((r) => r.id !== id);
-                  setReviews(updatedReviews); // Update state
-                }}
-              />
-            ))}
+            {reviews.length > 0 ? (
+              reviews.map((review) => (
+                <ReviewCard
+                  key={review.id}
+                  id={review.id}
+                  name={review.name}
+                  star={review.star}
+                  comment={review.comment}
+                  onDelete={(id) => {
+                    const updatedReviews = reviews.filter((r) => r.id !== id);
+                    setReviews(updatedReviews);
+                    if (typeof window !== "undefined") {
+                      localStorage.setItem(
+                        "reviews",
+                        JSON.stringify(updatedReviews),
+                      );
+                    }
+                  }}
+                />
+              ))
+            ) : (
+              <div className="flex h-[468px] w-[620px] items-center justify-center rounded-lg bg-project-20">
+                <p className="font-inter text-xl font-medium text-bw-primary">
+                  No reviews yet.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
